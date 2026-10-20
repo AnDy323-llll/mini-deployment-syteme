@@ -1,0 +1,49 @@
+name: CI/CD Pipeline (test)
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  ci-pipeline:
+    name: 1. Build & Tests (CI)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          load: true
+          tags: mini-app:test
+
+      - name: Test
+        run: |
+          # Launch the container in the background
+          docker run -d -p 8000:8000 --name test-container mini-app:test
+          sleep 2
+          # Check if the application is responding
+          curl --retry 3 --retry-connrefused http://localhost:8000
+
+  cd-pipeline:
+    name: 2. Deployment (CD)
+    needs: ci-pipeline
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Simulate deployment
+        run: |
+          echo "=> Success: your code is valid"
+          echo "=> CD: application is deployed"

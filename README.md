@@ -1,1 +1,1 @@
-# mini-deployment-syteme
+# Mini Deployment System
